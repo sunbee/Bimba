@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 class Grahaka(Base):
-    __tablename__ = 'grakaka'
+    __tablename__ = 'grahaka'
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)

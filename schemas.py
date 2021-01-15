@@ -2,14 +2,17 @@ from typing import List, Optional
 from pydantic import BaseModel, HttpUrl, EmailStr
 
 class PatraBase(BaseModel):
+    # Common to reading/writing
     image: HttpUrl
     document: Optional[HttpUrl]=None
     tags: str
 
 class PatraCreate(PatraBase):
+    # For writing ops
     pass
 
 class Patra(PatraBase):
+    # For reading ops
     id: int
     owner_id: int
 
@@ -17,14 +20,17 @@ class Patra(PatraBase):
         orm_mode=True
 
 class GrahakaBase(BaseModel):
+    # Common to reading/writing
     email: EmailStr
-    ia_active: bool
 
 class GrahakaCreate(GrahakaBase):
+    # For writing ops
     password: str
 
 class Grahaka(GrahakaBase):
+    # For reading ops
     id: int
+    is_active: bool
     items: List[Patra] = []
 
     class Config:
