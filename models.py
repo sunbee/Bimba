@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Boolean, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
-from .database import Base
+import database
+from database import Base
 
 class Grahaka(Base):
     __tablename__ = 'grahaka'

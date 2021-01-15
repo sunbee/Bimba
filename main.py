@@ -3,8 +3,9 @@ from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from . import crud, models, schemas
-from .database import SessionLocal, engine
+import models, crud, schemas
+import database
+from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -19,7 +20,7 @@ def get_db():
         db.close()
 
 @app.post("/grahaka/", response_model=schemas.Grahaka)
-def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_db):
+def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_db)):
     grahaka_DB = crud.get_grahaka_by_email(db=db, email=grahaka.email)
     if grahaka_DB:
         raise HTTPException(status_code=400, detail="Already have the grahaka.")
@@ -36,7 +37,7 @@ def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Found no user with {ID}.")
     return grahaka_DB
 
-@app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra):
+@app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra)
 def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
 

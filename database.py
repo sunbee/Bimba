@@ -1,12 +1,12 @@
-from sqlalchemy import engine
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-BIMBADB_URL = "file:///./bimba.db"
+BIMBADB_URL = "sqlite:///./bimba.db"
 
-engine = create_engine({
+engine = create_engine(
     BIMBADB_URL, connect_args = {"check_same_thread": False}
-})
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
