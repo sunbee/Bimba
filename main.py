@@ -34,7 +34,7 @@ def access_grahaka(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
 def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
     grahaka_DB = crud.get_grahaka_by_ID(db=db, grahaka_id=ID)
     if not grahaka_DB:
-        raise HTTPException(status_code=404, detail="Found no user with {ID}.")
+        raise HTTPException(status_code=404, detail=f"Found no user with {ID}.")
     return grahaka_DB
 
 @app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra)
