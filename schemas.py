@@ -30,7 +30,7 @@ class GrahakaCreate(GrahakaBase):
 class Grahaka(GrahakaBase):
     # For reading ops
     id: int
-    is_active: bool
+    is_active: bool = True
     items: List[Patra] = []
 
     class Config:
