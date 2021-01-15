@@ -33,7 +33,7 @@ def create_grahaka(db: Session, grahaka: schemas.GrahakaCreate):
     db.refresh(grahaka_DB)
     return grahaka_DB
 
-def create_patra(db: Session, patra: schemas.PatraCreate, grahaka_id: int):
+def create_patra_for_grahaka(db: Session, patra: schemas.PatraCreate, grahaka_id: int):
     patra_DB = models.Patra(**patra.dict(), owner_id=grahaka_id)
     db.add(patra_DB)
     db.commit()

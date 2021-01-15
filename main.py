@@ -36,3 +36,10 @@ def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Found no user with {ID}.")
     return grahaka_DB
 
+@app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra):
+def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
+    return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
+
+@app.get("/patra/", response_model=schemas.Patra)
+def access_patra(ID: int, db = Depends(get_db)):
+    return crud.get_patra()
