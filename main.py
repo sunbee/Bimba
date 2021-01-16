@@ -110,8 +110,8 @@ async def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_
 tags=["Grahaka"], 
 summary="Retrieve records for all grahaka.")
 async def access_grahaka(skip: int=0, limit: int=99, 
-db: Session = Depends(get_db), 
-admin: schemas.Grahaka = Depends(get_current_admin)):
+    db: Session = Depends(get_db), 
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     return crud.get_grahaka(db=db, skip=skip, limit=limit)
 
 @app.get("/grahaka/me/", response_model=schemas.Grahaka, 
@@ -144,12 +144,22 @@ summary="Retrieve all patra by owner grahaka's ID.")
 async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
 
+@app.post("/grahaka/patra/", response_model=schemas.Patra,
+tags=["Grahaka", "Patra"],
+summary="Upload the logged-in grahaka's patra.")
+async def upload_patra(
+    patra: schemas.PatraCreate,
+    db: Session = Depends(get_db), 
+    grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=grahaka.id)
+    
+
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
 summary="Retrieve records for all patra.")
 async def access_patra(skip: int=0, limit: int=99, 
-db: Session = Depends(get_db), 
-admin: schemas.Grahaka = Depends(get_current_admin)):
+    db: Session = Depends(get_db), 
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     return crud.get_patra(db=db, skip=skip, limit=limit)
 
 @app.get("/patra/{ID}", response_model=schemas.Patra, 
