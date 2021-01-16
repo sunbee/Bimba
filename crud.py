@@ -15,13 +15,13 @@ def get_grahaka_by_ID(db: Session, grahaka_id: int):
 def get_grahaka_by_email(db: Session, email: str):
     return db.query(models.Grahaka).filter(models.Grahaka.email == email).first()
 
-def get_grahaka(db: Session, skip: int=0, limit: int=100):
+def get_grahaka(db: Session, skip: int=0, limit: int=99):
     return db.query(models.Grahaka).offset(skip).limit(limit).all()
 
 def get_patra_by_ID(db: Session, patra_id: int):
     return db.query(models.Patra).filter(models.Patra.id == patra_id).first()
 
-def get_patra(db: Session, skip: int=0, limit: int=100):
+def get_patra(db: Session, skip: int=0, limit: int=99):
     return db.query(models.Patra).offset(skip).limit(limit).all()
 
 # Create (Crud)

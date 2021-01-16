@@ -111,6 +111,14 @@ async def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
 async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
 
-@app.get("/patra/", response_model=schemas.Patra)
-async def access_patra(ID: int, db = Depends(get_db)):
-    return crud.get_patra()
+@app.get("/patra/", response_model=List[schemas.Patra])
+async def access_patra(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
+    return crud.get_patra(db=db, skip=skip, limit=limit)
+    pass
+
+@app.get("/patra/{ID}", response_model=schemas.Patra)
+async def access_patra_by_ID(ID: int, db = Depends(get_db)):
+    patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
+    if not patra_DB:
+        raise HTTPException(status_code=404, detail=f"Found not patra with {ID}")
+    return patra_DB
