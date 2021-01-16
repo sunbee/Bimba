@@ -27,7 +27,6 @@ def get_patra(db: Session, skip: int=0, limit: int=100):
 # Create (Crud)
 
 def create_grahaka(db: Session, grahaka: schemas.GrahakaCreate):
-    # password_hashed = grahaka.password + "#"
     password_hashed = authenticate.get_hashed_password(grahaka.password)
     grahaka_DB = models.Grahaka(email=grahaka.email, is_active=True, password_hashed=password_hashed)
     db.add(grahaka_DB)
