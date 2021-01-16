@@ -62,7 +62,7 @@ async def get_current_active_grahaka(grahaka: models.Grahaka = Depends(get_curre
         raise HTTPException(status_code=400, detail="Grahak status inactive.")
     return grahaka
 
-@app.post("/token")
+@app.post("/token", tags=["Security"], summary="Generate token after verifying credentials presented.")
 async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Issue a token when the grahaka signs in with username and password.
@@ -85,45 +85,60 @@ async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     )
     return {"access_token": token_JWT, "token_type": "bearer"}
 
-@app.post("/grahaka/", response_model=schemas.Grahaka)
+@app.post("/grahaka/", response_model=schemas.Grahaka, 
+tags=["Grahaka"], 
+summary="Create a new grahaka account.")
 async def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_db)):
     grahaka_DB = crud.get_grahaka_by_email(db=db, email=grahaka.email)
     if grahaka_DB:
         raise HTTPException(status_code=400, detail="Already have the grahaka.")
     return crud.create_grahaka(db=db, grahaka=grahaka)
 
-@app.get("/grahaka/", response_model=List[schemas.Grahaka])
+@app.get("/grahaka/", response_model=List[schemas.Grahaka], 
+tags=["Grahaka"], 
+summary="Retrieve records for all grahaka.")
 async def access_grahaka(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
     return crud.get_grahaka(db=db, skip=skip, limit=limit)
 
-@app.get("/grahaka/me/", response_model=schemas.Grahaka)
+@app.get("/grahaka/me/", response_model=schemas.Grahaka, 
+tags=["Grahaka", "Security"], 
+summary="Who am I?")
 async def access_loggedin_grahaka(grahaka_loggedin: models.Grahaka = Depends(get_current_active_grahaka)):
     return grahaka_loggedin
 
-@app.get("/grahaka/{ID}", response_model=schemas.Grahaka)
+@app.get("/grahaka/{ID}", response_model=schemas.Grahaka, 
+tags=["Grahaka"], 
+summary="Retrieve record by grahaka's ID.")
 async def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
     grahaka_DB = crud.get_grahaka_by_ID(db=db, grahaka_id=ID)
     if not grahaka_DB:
         raise HTTPException(status_code=404, detail=f"Found no user with {ID}.")
     return grahaka_DB
 
-@app.delete("/grahaka/{ID}", response_model=schemas.Grahaka)
+@app.delete("/grahaka/{ID}", response_model=schemas.Grahaka, 
+tags=["Grahaka"], 
+summary="Remove account by grahaka's ID.")
 async def remove_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
     grahaka_DB = crud.delete_grahaka(db=db, grahaka_id=ID)
     if not grahaka_DB:
         raise HTTPException(status_code=404, detail=f"Found no usr with {ID}.")
     return grahaka_DB
 
-@app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra)
+@app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra, 
+tags=["Grahaka", "Patra"], 
+summary="Retrieve all patra by owner grahaka's ID.")
 async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
 
-@app.get("/patra/", response_model=List[schemas.Patra])
+@app.get("/patra/", response_model=List[schemas.Patra], 
+tags=["Patra"], 
+summary="Retrieve records for all patra.")
 async def access_patra(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
     return crud.get_patra(db=db, skip=skip, limit=limit)
-    pass
 
-@app.get("/patra/{ID}", response_model=schemas.Patra)
+@app.get("/patra/{ID}", response_model=schemas.Patra, 
+tags=["Patra"], 
+summary="Retrieveove patra by ID.")
 async def access_patra_by_ID(ID: int, db = Depends(get_db)):
     patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
     if not patra_DB:

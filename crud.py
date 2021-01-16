@@ -50,7 +50,7 @@ def delete_grahaka(db: Session, grahaka_id: int):
         db.commit()
     return grahaka_DB
 
-def delete_patra(db: Session, patrd_id: int):
+def delete_patra(db: Session, patra_id: int):
     patra_DB = db.query(models.Patra).filter(models.Patra.id == patra_id).first()
     if patra_DB:
         db.delete(patra_DB)
