@@ -4,3 +4,5 @@ __pycache__
 .mypy_cache
 .vscode
 __pycache__/crud.cpython-38.pyc
+__pycache__/main.cpython-38.pyc
+__pycache__/models.cpython-38.pyc
