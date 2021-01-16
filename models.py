@@ -12,7 +12,9 @@ class Grahaka(Base):
     password_hashed = Column(String)
     is_active = Column(Boolean)
 
-    items = relationship("Patra", back_populates="owner")
+    items = relationship("Patra", 
+        back_populates="owner",
+        cascade="all, delete, delete-orphan")
 
 class Patra(Base):
     __tablename__ = 'patra'

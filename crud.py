@@ -40,3 +40,19 @@ def create_patra_for_grahaka(db: Session, patra: schemas.PatraCreate, grahaka_id
     db.commit()
     db.refresh(patra_DB)
     return patra_DB
+
+# Delete (cruD)
+
+def delete_grahaka(db: Session, grahaka_id: int):
+    grahaka_DB = db.query(models.Grahaka).filter(models.Grahaka.id == grahaka_id).first()
+    if grahaka_DB:
+        db.delete(grahaka_DB)
+        db.commit()
+    return grahaka_DB
+
+def delete_patra(db: Session, patrd_id: int):
+    patra_DB = db.query(models.Patra).filter(models.Patra.id == patra_id).first()
+    if patra_DB:
+        db.delete(patra_DB)
+        db.commit()
+    return patra_DB

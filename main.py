@@ -107,6 +107,13 @@ async def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Found no user with {ID}.")
     return grahaka_DB
 
+@app.delete("/grahaka/{ID}", response_model=schemas.Grahaka)
+async def remove_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
+    grahaka_DB = crud.delete_grahaka(db=db, grahaka_id=ID)
+    if not grahaka_DB:
+        raise HTTPException(status_code=404, detail=f"Found no usr with {ID}.")
+    return grahaka_DB
+
 @app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra)
 async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
