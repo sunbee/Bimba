@@ -107,8 +107,8 @@ async def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_
     return crud.create_grahaka(db=db, grahaka=grahaka)
 
 @app.get("/grahaka/", response_model=List[schemas.Grahaka], 
-tags=["Grahaka"], 
-summary="Retrieve records for all grahaka.")
+tags=["Grahaka", "Admin"], 
+summary="Retrieve all grahaka for admin.")
 async def access_grahaka(skip: int=0, limit: int=99, 
     db: Session = Depends(get_db), 
     admin: schemas.Grahaka = Depends(get_current_admin)):
@@ -121,30 +121,36 @@ async def access_loggedin_grahaka(grahaka_loggedin: models.Grahaka = Depends(get
     return grahaka_loggedin
 
 @app.get("/grahaka/{ID}", response_model=schemas.Grahaka, 
-tags=["Grahaka"], 
-summary="Retrieve record by grahaka's ID.")
-async def access_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
+tags=["Grahaka", "Admin"], 
+summary="Retrieve grahaka's record by ID for admin.")
+async def access_grahaka_by_ID(ID: int, 
+    db: Session = Depends(get_db),
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     grahaka_DB = crud.get_grahaka_by_ID(db=db, grahaka_id=ID)
     if not grahaka_DB:
         raise HTTPException(status_code=404, detail=f"Found no user with {ID}.")
     return grahaka_DB
 
 @app.delete("/grahaka/{ID}", response_model=schemas.Grahaka, 
-tags=["Grahaka"], 
-summary="Remove account by grahaka's ID.")
-async def remove_grahaka_by_ID(ID: int, db: Session = Depends(get_db)):
+tags=["Grahaka", "Admin"], 
+summary="Remove grahaka's account and records with ID for admin.")
+async def remove_grahaka_by_ID(ID: int, 
+    db: Session = Depends(get_db),
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     grahaka_DB = crud.delete_grahaka(db=db, grahaka_id=ID)
     if not grahaka_DB:
-        raise HTTPException(status_code=404, detail=f"Found no usr with {ID}.")
+        raise HTTPException(status_code=404, detail=f"Found no grahaka with {ID}.")
     return grahaka_DB
 
 @app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra, 
-tags=["Grahaka", "Patra"], 
-summary="Retrieve all patra by owner grahaka's ID.")
-async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depends(get_db)):
+tags=["Grahaka", "Patra", "Admin"], 
+summary="Add a patra to grahaka's collection with ID for admin.")
+async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, 
+    db = Depends(get_db),
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=ID)
 
-@app.post("/grahaka/patra/", response_model=schemas.Patra,
+@app.post("/patra/", response_model=schemas.Patra,
 tags=["Grahaka", "Patra"],
 summary="Upload the logged-in grahaka's patra.")
 async def upload_patra(
@@ -156,17 +162,19 @@ async def upload_patra(
 
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
-summary="Retrieve records for all patra.")
+summary="Retrieve records for logged-in grahaka.")
 async def access_patra(skip: int=0, limit: int=99, 
     db: Session = Depends(get_db), 
-    admin: schemas.Grahaka = Depends(get_current_admin)):
-    return crud.get_patra(db=db, skip=skip, limit=limit)
+    grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    return crud.get_patra_for_grahaka(db=db, grahaka_id=grahaka.id, skip=skip, limit=limit)
 
 @app.get("/patra/{ID}", response_model=schemas.Patra, 
-tags=["Patra"], 
-summary="Retrieveove patra by ID.")
-async def access_patra_by_ID(ID: int, db = Depends(get_db)):
+tags=["Patra", "Admin"], 
+summary="Retrieve patra by ID for admin.")
+async def access_patra_by_ID(ID: int, 
+    db = Depends(get_db),
+    admin: schemas.Grahaka = Depends(get_current_admin)):
     patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
     if not patra_DB:
-        raise HTTPException(status_code=404, detail=f"Found not patra with {ID}")
+        raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB

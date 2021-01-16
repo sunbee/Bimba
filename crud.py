@@ -24,6 +24,10 @@ def get_patra_by_ID(db: Session, patra_id: int):
 def get_patra(db: Session, skip: int=0, limit: int=99):
     return db.query(models.Patra).offset(skip).limit(limit).all()
 
+def get_patra_for_grahaka(db: Session, grahaka_id: int, skip: int=0, limit: int=99):
+    return db.query(models.Patra).filter(models.Patra.owner_id == grahaka_id).all()
+    
+
 # Create (Crud)
 
 def create_grahaka(db: Session, grahaka: schemas.GrahakaCreate):
