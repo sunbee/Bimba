@@ -31,6 +31,7 @@ class Grahaka(GrahakaBase):
     # For reading ops
     id: int
     is_active: bool = True
+    is_admin: bool = False
     items: List[Patra] = []
 
     class Config:

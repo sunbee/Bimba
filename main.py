@@ -59,8 +59,20 @@ async def get_current_grahaka(db: Session = Depends(get_db), token: str = Depend
 
 async def get_current_active_grahaka(grahaka: models.Grahaka = Depends(get_current_grahaka)):
     if not grahaka.is_active:
-        raise HTTPException(status_code=400, detail="Grahak status inactive.")
+        raise HTTPException(status_code=400, detail="Grahaka status inactive.")
     return grahaka
+
+async def get_current_admin(admin: models.Grahaka = Depends(get_current_active_grahaka)):
+    """
+    Restrict certain path operations by injecting admin via Dependency Injection.
+    This requires the following:
+    1. Write a SQL query to ugrade a grahaka to admin. Use command-line interface to SQLite3.
+    2. Inject admin via Dependency Injection in a restricted path op using get_current_admin function.
+    3. That's all! Verify using Swagger docs by logging in as admin, logging out and logging in as grahaka.
+    """
+    if not admin.is_admin:
+        raise HTTPException(status_code=400, detail="Found no admin privileges to continue.")
+    return admin
 
 @app.post("/token", tags=["Security"], summary="Generate token after verifying credentials presented.")
 async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -97,7 +109,9 @@ async def add_grahaka(grahaka: schemas.GrahakaCreate, db: Session = Depends(get_
 @app.get("/grahaka/", response_model=List[schemas.Grahaka], 
 tags=["Grahaka"], 
 summary="Retrieve records for all grahaka.")
-async def access_grahaka(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
+async def access_grahaka(skip: int=0, limit: int=99, 
+db: Session = Depends(get_db), 
+admin: schemas.Grahaka = Depends(get_current_admin)):
     return crud.get_grahaka(db=db, skip=skip, limit=limit)
 
 @app.get("/grahaka/me/", response_model=schemas.Grahaka, 
@@ -133,7 +147,9 @@ async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, db = Depend
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
 summary="Retrieve records for all patra.")
-async def access_patra(skip: int=0, limit: int=99, db: Session = Depends(get_db)):
+async def access_patra(skip: int=0, limit: int=99, 
+db: Session = Depends(get_db), 
+admin: schemas.Grahaka = Depends(get_current_admin)):
     return crud.get_patra(db=db, skip=skip, limit=limit)
 
 @app.get("/patra/{ID}", response_model=schemas.Patra, 

@@ -11,6 +11,7 @@ class Grahaka(Base):
     email = Column(String, unique=True, index=True)
     password_hashed = Column(String)
     is_active = Column(Boolean)
+    is_admin = Column(Boolean)
 
     items = relationship("Patra", 
         back_populates="owner",
