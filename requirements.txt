@@ -1,0 +1,11 @@
+bcrypt==3.2.0
+fastapi==0.61.1
+passlib==1.7.4
+pydantic==1.6.1
+python-jose==3.2.0
+requests
+SQLAlchemy
+uvicorn==0.12.1
+typing
+email-validator
+python-multipart
