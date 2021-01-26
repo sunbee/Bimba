@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Path, Query, Response, Header, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 
@@ -80,7 +81,7 @@ async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     Issue a token when the grahaka signs in with username and password.
     The username and password are passed through a form.
     Executes the steps as follows:
-    1. Authenticates the grahaka with the credentials supplied.
+    1. Authenticate the grahaka with the credentials supplied.
     2. Create an access token.
     3. Return the token in the expected format per specification.
     """
@@ -178,3 +179,46 @@ async def access_patra_by_ID(ID: int,
     if not patra_DB:
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
+
+@app.get("/sign-in")
+async def html_form_auth():
+    form_body = """
+    <body>
+        <div class="container">
+            <form action="/token" enctype="multipart/form-data" method="POST">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    <body>
+    """
+    pass_unbreakable = """
+    <input type="password" id="password" name="password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required><input type="submit" value="Submit">
+    """
+    return HTMLResponse(content=form_body)
+
+@app.get("/grahaka/{ID}/patra")
+async def access_patra_by_tags(ID: int, skip: int=0, limit: int=99,
+q: Optional[List[str]] = Query(None, description="Enter as many or as few tags as you desire."),
+db: Session = Depends(get_db)):
+    """
+    Retrieve patra by search tags for the grahaka.
+    TODO: Retrieve for authenticated grahaka.
+    """
+    search_scope = crud.get_patra_for_grahaka(db=db, grahaka_id=ID, skip=skip, limit=limit)
+    if not search_scope:
+        HTTPException(status_code=404, detail="Found not matching results.")
+    if q:
+        search_terms = q
+        while True:
+            search_term = search_terms.pop()
+            matches = [record for record in search_scope if search_term in record.tags.split(",")]
+            search_scope = matches
+            if len(matches) == 0:
+                break
+            if len(search_terms) == 0:
+                break
+    return search_scope
