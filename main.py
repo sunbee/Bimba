@@ -180,7 +180,7 @@ async def access_patra_by_ID(ID: int,
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
 
-@app.get("/sign-in")
+@app.get("/sign-in", tags=["WIP"])
 async def html_form_auth():
     form_body = """
     <body>
@@ -200,7 +200,7 @@ async def html_form_auth():
     """
     return HTMLResponse(content=form_body)
 
-@app.get("/grahaka/{ID}/patra")
+@app.get("/grahaka/{ID}/patra", tags=["WIP"])
 async def access_patra_by_tags(ID: int, skip: int=0, limit: int=99,
 q: Optional[List[str]] = Query(None, description="Enter as many or as few tags as you desire."),
 db: Session = Depends(get_db)):
