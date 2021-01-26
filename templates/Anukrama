@@ -1,0 +1,20 @@
+<table>
+    <tr>
+        <th>Image</th>
+        <th>Tags</th>
+    </tr>
+{% for row in records %}
+    <tr>
+        <td>
+            {% if not row.document %}
+                <img src="{{ row.image }}" />
+            {% else %}
+                <a href="{{ row.document }}">
+                    <img src="{{ row.image }}" />
+                </a> 
+            {% endif %}
+        </td>
+        <td>{{ row.tags }}</td>
+    </tr>
+{% endfor %}
+</table>

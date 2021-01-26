@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
+from jinja2 import Environment, FileSystemLoader
 
 import models, crud, schemas
 import database
@@ -221,4 +222,12 @@ db: Session = Depends(get_db)):
                 break
             if len(search_terms) == 0:
                 break
-    return search_scope
+    
+    # Jinja-fy!
+    file_loader = FileSystemLoader("templates")
+    env = Environment(loader=file_loader)
+
+    template = env.get_template("bimbapatra.html")
+    output_html = template.render(records=search_scope)
+
+    return HTMLResponse(content=output_html) # search_scope

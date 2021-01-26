@@ -3,6 +3,7 @@ config.py
 __pycache__/
 .mypy_cache
 .vscode
+.DS_store
 __pycache__/crud.cpython-38.pyc
 __pycache__/main.cpython-38.pyc
 __pycache__/models.cpython-38.pyc

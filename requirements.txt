@@ -5,6 +5,7 @@ pydantic==1.6.1
 python-jose==3.2.0
 requests
 SQLAlchemy
+jinja2
 uvicorn==0.12.1
 typing
 email-validator
