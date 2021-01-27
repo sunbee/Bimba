@@ -215,7 +215,7 @@ async def html_form_auth():
     """
     return HTMLResponse(content=form_body)
 
-async def get_current_cookie_grahaka(db: Session = Depends(get_db), access_token_cookie: str = Cookie(None)):
+async def get_cookie_grahaka(db: Session = Depends(get_db), access_token_cookie: str = Cookie(None)):
     """
     Accepts token as cookie and decodes it to get the logged-in grahaka.
     Executes the following steps:
@@ -246,7 +246,7 @@ async def get_current_cookie_grahaka(db: Session = Depends(get_db), access_token
 async def access_patra_by_tags(skip: int=0, limit: int=99,
     q: Optional[List[str]] = Query(None, description="Enter as many or as few tags as you desire."),
     db: Session = Depends(get_db),
-    grahaka: schemas.Grahaka = Depends(get_current_cookie_grahaka)):
+    grahaka: schemas.Grahaka = Depends(get_cookie_grahaka)):
     """
     SPECIAL CASE FOR VIEWING IN BROWSER.
     The graghaka will need to /sign-in from the browser.
