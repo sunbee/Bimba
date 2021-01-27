@@ -53,11 +53,8 @@ async def get_current_grahaka(db: Session = Depends(get_db), token: str = Depend
         if not grahaka:
             raise credential_exception
         return grahaka
-
     except JWTError:
         raise credential_exception
-
-    pass
 
 async def get_current_active_grahaka(grahaka: models.Grahaka = Depends(get_current_grahaka)):
     if not grahaka.is_active:
@@ -77,7 +74,8 @@ async def get_current_admin(admin: models.Grahaka = Depends(get_current_active_g
     return admin
 
 @app.post("/token", tags=["Security"], summary="Generate token after verifying credentials presented.")
-async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def create_JWT_token(*, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db), 
+response: Response):
     """
     Issue a token when the grahaka signs in with username and password.
     The username and password are passed through a form.
@@ -85,6 +83,15 @@ async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     1. Authenticate the grahaka with the credentials supplied.
     2. Create an access token.
     3. Return the token in the expected format per specification.
+
+    4. EXPERIMENTAL: Saet a cookie for browser to natively manage token.
+        The client needs a mechanism to stash the token 
+        and send it with future requests. By setting a cookie with the token, 
+        we open up the opportunity 
+        of using the native capabilities of a browser to handle cookies,
+        avoiding client-side programming in javascript (for example.)
+        So in addition to sending the token generated in the response body, 
+        we have set a cookie which is retrieved in token-decoding function.
     """
     grahaka = authenticate.authenticate_grahaka(db, form_data.username, form_data.password)
     if not grahaka:
@@ -97,6 +104,8 @@ async def create_JWT_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": form_data.username},
         expires_delta=timedelta(minutes=config.ACCESS_TOKEN_EXPIRES_MINUTES)
     )
+    response.delete_cookie(key="access_token")
+    response.set_cookie(key="access_token_cookie", value=token_JWT)
     return {"access_token": token_JWT, "token_type": "bearer"}
 
 @app.post("/grahaka/", response_model=schemas.Grahaka, 
@@ -181,8 +190,13 @@ async def access_patra_by_ID(ID: int,
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
 
-@app.get("/sign-in", tags=["WIP"])
+@app.get("/sign-in", tags=["Web: Limited Feature"])
 async def html_form_auth():
+    """
+    Serves a simple web-page for the grahaka to sign in.
+    Grahaka can access information through a web-page 
+    once authenticated in this way.
+    """
     form_body = """
     <body>
         <div class="container">
@@ -201,15 +215,44 @@ async def html_form_auth():
     """
     return HTMLResponse(content=form_body)
 
-@app.get("/grahaka/{ID}/patra", tags=["WIP"])
-async def access_patra_by_tags(ID: int, skip: int=0, limit: int=99,
-q: Optional[List[str]] = Query(None, description="Enter as many or as few tags as you desire."),
-db: Session = Depends(get_db)):
+async def get_current_cookie_grahaka(db: Session = Depends(get_db), access_token_cookie: str = Cookie(None)):
     """
-    Retrieve patra by search tags for the grahaka.
-    TODO: Retrieve for authenticated grahaka.
+    Accepts token as cookie and decodes it to get the logged-in grahaka.
+    Executes the following steps:
+    1. Creates an exception class extending HTTPException.
+    2. Decodes the token and extracts the username (email).
+    3. Checks that the grahaka's record exists in the database.
+    4. Returns the grahaka object or raises an HTTP exception.
     """
-    search_scope = crud.get_patra_for_grahaka(db=db, grahaka_id=ID, skip=skip, limit=limit)
+    credential_exception = HTTPException(
+        status_code=401,
+        detail="Granted no access.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(access_token_cookie, config.SECRET_KEY, algorithms=[config.ALGORITHM])
+        username: str = payload.get("sub")
+        if not username:
+            raise credential_exception
+        grahaka = crud.get_grahaka_by_email(db, username)
+        if not grahaka:
+            raise credential_exception
+        return grahaka
+    except JWTError:
+        raise credential_exception
+
+
+@app.get("/web_patra", tags=["Web: Limited Feature"])
+async def access_patra_by_tags(skip: int=0, limit: int=99,
+    q: Optional[List[str]] = Query(None, description="Enter as many or as few tags as you desire."),
+    db: Session = Depends(get_db),
+    grahaka: schemas.Grahaka = Depends(get_current_cookie_grahaka)):
+    """
+    SPECIAL CASE FOR VIEWING IN BROWSER.
+    The graghaka will need to /sign-in from the browser.
+    The 
+    """
+    search_scope = crud.get_patra_for_grahaka(db=db, grahaka_id=grahaka.id, skip=skip, limit=limit)
     if not search_scope:
         HTTPException(status_code=404, detail="Found not matching results.")
     if q:
