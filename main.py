@@ -1,18 +1,21 @@
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Depends, HTTPException, status, Path, Query, Response, Header, Cookie
+from fastapi import FastAPI, Depends, HTTPException, status, Path, Query, File, UploadFile, Response, Header, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from jinja2 import Environment, FileSystemLoader
+import requests
+from requests.exceptions import HTTPError
 
 import models, crud, schemas
 import database
 import config
 import authenticate
 import authorize
+import FireCRUD
 
 from database import SessionLocal, engine
 
@@ -169,6 +172,45 @@ async def upload_patra(
     db: Session = Depends(get_db), 
     grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=grahaka.id)
+
+@app.post("/patra_upload/", response_model=schemas.Patra,
+tags=["Grahaka", "Patra"],
+summary="Upload a patra for the logged-in grahaka.")
+async def upload_patra(
+    bimba: UploadFile = File(...),
+    tags: List[str] = Query(..., description="Furnish tags for searchability."),
+    db: Session = Depends(get_db), 
+    grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    try:
+        fire_token = FireCRUD.retrieve_authToken()
+    except HTTPError as errHTTP:
+        raise HTTPException(status_code=404, detail=f'Got no token from Firebase. See: {errHTTP}')
+    except Exception as err:
+        raise HTTPException(status_code=404, detail=f'Got no auth token. See: {err}')
+    else:
+        print(fire_token)
+        if not len(tags) > 1:
+            label = tags[0]
+        else:
+            label = ",".join(tags)
+        print(tags)
+        url2fire = 'https://firebasestorage.googleapis.com/v0/b/shiva-923e9.appspot.com/o/stash%2F'
+        url2file = url2fire + bimba.filename.replace(" ", "_")
+        headers = {"Content-Type": bimba.content_type, "Authorization": "Bearer "+fire_token["idToken"]}
+        try:
+            r = requests.post(url2file, data=bimba.file.read(), headers=headers)
+            r.raise_for_status()
+        except HTTPError as errHTTP:
+            raise HTTPException(status_code=404, detail=f'Uploaded no image to Firebase. See: {errHTTP}')
+        except Exception as err:
+            raise HTTPException(status_code=404, detail=f'Posted no image to Firebase. See: {err}')
+        else:           
+            response = r.json()
+            print(response)
+            bimbaURL = url2file + '?alt=media&token=' + response["downloadTokens"]
+            bimbapatra = schemas.PatraCreate(image=bimbaURL, tags=label)
+            
+            return crud.create_patra_for_grahaka(db=db, patra=bimbapatra, grahaka_id=grahaka.id)
 
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
