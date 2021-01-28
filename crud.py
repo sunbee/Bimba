@@ -54,6 +54,13 @@ def delete_grahaka(db: Session, grahaka_id: int):
         db.commit()
     return grahaka_DB
 
+def delete_patra_for_grahaka(db: Session, grahaka_id: int, patra_id: int):
+    patra_DB = db.query(models.Patra).filter(models.Grahaka.id == grahaka_id, models.Patra.id == patra_id).first()
+    if patra_DB:
+        db.delete(patra_DB)
+        db.commit()
+    return patra_DB
+
 def delete_patra(db: Session, patra_id: int):
     patra_DB = db.query(models.Patra).filter(models.Patra.id == patra_id).first()
     if patra_DB:

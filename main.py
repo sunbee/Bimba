@@ -163,13 +163,12 @@ async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate,
 
 @app.post("/patra/", response_model=schemas.Patra,
 tags=["Grahaka", "Patra"],
-summary="Upload the logged-in grahaka's patra.")
+summary="Upload a patra for the logged-in grahaka.")
 async def upload_patra(
     patra: schemas.PatraCreate,
     db: Session = Depends(get_db), 
     grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
     return crud.create_patra_for_grahaka(db=db, patra=patra, grahaka_id=grahaka.id)
-    
 
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
@@ -186,6 +185,28 @@ async def access_patra_by_ID(ID: int,
     db = Depends(get_db),
     admin: schemas.Grahaka = Depends(get_current_admin)):
     patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
+    if not patra_DB:
+        raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
+    return patra_DB
+
+@app.delete("/patra/{ID}", response_model=schemas.Patra,
+tags=["Patra"],
+summary="Delete a patra by ID for the logged-in grahaka.")
+async def remove_patra_by_ID(ID: int,
+    db = Depends(get_db),
+    grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    patra_DB = crud.delete_patra_for_grahaka(db=db, grahaka_id=grahaka.id, patra_id=ID)
+    if not patra_DB:
+        raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
+    return patra_DB
+
+@app.delete("/patra_dosh/{ID}", response_model=schemas.Patra,
+tags=["Patra", "Admin"],
+summary="Delete a patra by ID for admin.")
+async def remove_patra_admin(ID: int,
+    db = Depends(get_db),
+    admin: schemas.Grahaka = Depends(get_current_admin)):
+    patra_DB = crud.delete_patra(db=db, patra_id=ID)
     if not patra_DB:
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
