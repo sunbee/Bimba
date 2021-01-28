@@ -158,7 +158,8 @@ async def remove_grahaka_by_ID(ID: int,
 
 @app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra, 
 tags=["Grahaka", "Patra", "Admin"], 
-summary="Add a patra to grahaka's collection with ID for admin.")
+summary="Add a patra to grahaka's collection with ID for admin.",
+deprecated=True)
 async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate, 
     db = Depends(get_db),
     admin: schemas.Grahaka = Depends(get_current_admin)):
@@ -166,7 +167,8 @@ async def add_patra_for_grahaka(ID: int, patra: schemas.PatraCreate,
 
 @app.post("/patra/", response_model=schemas.Patra,
 tags=["Grahaka", "Patra"],
-summary="Upload a patra for the logged-in grahaka.")
+summary="Upload a patra for the logged-in grahaka.",
+deprecated=True)
 async def upload_patra(
     patra: schemas.PatraCreate,
     db: Session = Depends(get_db), 
@@ -210,7 +212,7 @@ async def upload_patra(
             bimbaURL = url2file + '?alt=media&token=' + response["downloadTokens"]
             bimbapatra = schemas.PatraCreate(image=bimbaURL, tags=label)
             
-            return crud.create_patra_for_grahaka(db=db, patra=bimbapatra, grahaka_id=grahaka.id)
+    return crud.create_patra_for_grahaka(db=db, patra=bimbapatra, grahaka_id=grahaka.id)
 
 @app.get("/patra/", response_model=List[schemas.Patra], 
 tags=["Patra"], 
@@ -242,16 +244,81 @@ async def remove_patra_by_ID(ID: int,
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
 
+@app.delete("/patra_delete/{ID}", response_model=schemas.Patra,
+tags=["Patra"],
+summary="Delete a patra by ID for the logged-in grahaka or admin.")
+async def remove_patra_by_ID(ID: int,
+    db = Depends(get_db),
+    grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
+    if not patra_DB:
+        raise HTTPException(status_code=404, detail=f"Found no patra {ID}.")
+    if not (patra_DB.owner_id == grahaka.id or grahaka.is_admin):
+        raise HTTPException(status_code=401, detail=f"Grahaka has no right to delete {ID}.")
+    try:
+        fire_token = FireCRUD.retrieve_authToken()
+    except HTTPError as errHTTP:
+        raise HTTPException(status_code=404, detail=f'Got no token from Firebase. See: {errHTTP}')
+    except Exception as err:
+        raise HTTPException(status_code=404, detail=f'Got no auth token. See: {err}')
+    else:
+        print(fire_token)
+        bimba2delete = patra_DB.image
+        headers = {"Authorization": "Bearer "+fire_token["idToken"]}
+        try:
+            r = requests.delete(bimba2delete, headers=headers)
+            r.raise_for_status()
+        except HTTPError as errHTTP:
+            raise HTTPException(status_code=404, detail=f'Removed no image from Firebase. See: {errHTTP}.')
+        except Exception as err:
+            raise HTTPException(status_code=404, detail=f'Removed no image. See: {err}.')
+        else:           
+            if r: # Successsful response to DELETE is an empty string
+                print(f"DELETE operation successful with {bimba2delete}")
+    
+    return crud.delete_patra(db=db, patra_id=ID)
+    
 @app.delete("/patra_dosh/{ID}", response_model=schemas.Patra,
 tags=["Patra", "Admin"],
-summary="Delete a patra by ID for admin.")
+summary="Delete a patra by ID for admin.", 
+deprecated=True)
 async def remove_patra_admin(ID: int,
     db = Depends(get_db),
     admin: schemas.Grahaka = Depends(get_current_admin)):
+
+    patra_DB = crud.get_patra_by_ID(db=db, patra_id=ID)
+    if not patra_DB:
+        raise HTTPException(status_code=404, detail=f"Found no patra {ID}.")
+    if not (patra_DB.owner_id == admin.id or admin.is_admin):
+        raise HTTPException(status_code=401, detail=f"Grahaka has no right to delete {ID}.")
+    try:
+        fire_token = FireCRUD.retrieve_authToken()
+    except HTTPError as errHTTP:
+        raise HTTPException(status_code=404, detail=f'Got no token from Firebase. See: {errHTTP}')
+    except Exception as err:
+        raise HTTPException(status_code=404, detail=f'Got no auth token. See: {err}')
+    else:
+        print(fire_token)
+        bimba2delete = patra_DB.image
+        headers = {"Authorization": "Bearer "+fire_token["idToken"]}
+        try:
+            r = requests.delete(bimba2delete, headers=headers)
+            r.raise_for_status()
+        except HTTPError as errHTTP:
+            raise HTTPException(status_code=404, detail=f'Removed no image from Firebase. See: {errHTTP}.')
+        except Exception as err:
+            raise HTTPException(status_code=404, detail=f'Removed no image. See: {err}.')
+        else:           
+            if r: # Successsful response to DELETE is an empty string
+                print(f"DELETE operation successful with {bimba2delete}")
+    
+    return crud.delete_patra(db=db, patra_id=ID)
+    """
     patra_DB = crud.delete_patra(db=db, patra_id=ID)
     if not patra_DB:
         raise HTTPException(status_code=404, detail=f"Found no patra with {ID}")
     return patra_DB
+    """
 
 @app.get("/sign-in", tags=["Web: Limited Feature"])
 async def html_form_auth():
