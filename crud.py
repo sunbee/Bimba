@@ -11,7 +11,6 @@ import authenticate
 def get_grahaka_by_ID(db: Session, grahaka_id: int):
     return db.query(models.Grahaka).filter(models.Grahaka.id == grahaka_id).first()
 
-
 def get_grahaka_by_email(db: Session, email: str):
     return db.query(models.Grahaka).filter(models.Grahaka.email == email).first()
 
