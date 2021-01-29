@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 from jinja2 import Environment, FileSystemLoader
 import requests
 from requests.exceptions import HTTPError
+from urllib.parse import quote
 
 import models, crud, schemas
 import database
@@ -151,10 +152,30 @@ summary="Remove grahaka's account and records with ID for admin.")
 async def remove_grahaka_by_ID(ID: int, 
     db: Session = Depends(get_db),
     admin: schemas.Grahaka = Depends(get_current_admin)):
-    grahaka_DB = crud.delete_grahaka(db=db, grahaka_id=ID)
-    if not grahaka_DB:
-        raise HTTPException(status_code=404, detail=f"Found no grahaka with {ID}.")
-    return grahaka_DB
+
+    all_patra = crud.get_patra_for_grahaka(db=db, grahaka_id=ID)
+    if all_patra:
+        urls2delete = [this_patra.image for this_patra in all_patra]
+        if urls2delete:
+            try:
+                fire_token = FireCRUD.retrieve_authToken()
+            except HTTPError as errHTTP:
+                raise HTTPException(status_code=404, detail=f'Got no token from Firebase. See: {errHTTP}')
+            except Exception as err:
+                raise HTTPException(status_code=404, detail=f'Got no auth token. See: {err}')
+            else:
+                print(fire_token)
+                for bimba2delete in urls2delete:
+                    headers = {"Authorization": "Bearer "+fire_token["idToken"]}
+                    try:
+                        r = requests.delete(bimba2delete, headers=headers)
+                        r.raise_for_status()
+                    except HTTPError as errHTTP:
+                        raise HTTPException(status_code=404, detail=f'Removed no image from Firebase. See: {errHTTP}.')
+                    except Exception as err:
+                        raise HTTPException(status_code=404, detail=f'Removed no image. See: {err}.')
+
+    return crud.delete_grahaka(db=db, grahaka_id=ID)
 
 @app.post("/grahaka/{ID}/patra/", response_model=schemas.Patra, 
 tags=["Grahaka", "Patra", "Admin"], 
@@ -183,6 +204,14 @@ async def upload_patra(
     tags: List[str] = Query(..., description="Furnish tags for searchability."),
     db: Session = Depends(get_db), 
     grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
+    """
+    Upload a file to grahaka's folder on Firebase. 
+    Use admin's credentials access Firebase storage.
+    The project folder is called stash.
+    Each grahaka has a sub-folder under the project folder,
+    identified by grahaka's email (since email is unique.)
+    Grahaka's content is stored here for privacy and security.
+    """
     try:
         fire_token = FireCRUD.retrieve_authToken()
     except HTTPError as errHTTP:
@@ -194,10 +223,10 @@ async def upload_patra(
         if not len(tags) > 1:
             label = tags[0]
         else:
-            label = ",".join(tags)
+            label = ",".join(tags).lower()
         print(tags)
         url2fire = 'https://firebasestorage.googleapis.com/v0/b/shiva-923e9.appspot.com/o/stash%2F'
-        url2file = url2fire + bimba.filename.replace(" ", "_")
+        url2file = url2fire + quote(grahaka.email, safe='') + "%2F" + bimba.filename.replace(" ", "_")
         headers = {"Content-Type": bimba.content_type, "Authorization": "Bearer "+fire_token["idToken"]}
         try:
             r = requests.post(url2file, data=bimba.file.read(), headers=headers)
@@ -235,7 +264,8 @@ async def access_patra_by_ID(ID: int,
 
 @app.delete("/patra/{ID}", response_model=schemas.Patra,
 tags=["Patra"],
-summary="Delete a patra by ID for the logged-in grahaka.")
+summary="Delete a patra by ID for the logged-in grahaka.",
+deprecated=True)
 async def remove_patra_by_ID(ID: int,
     db = Depends(get_db),
     grahaka: schemas.Grahaka = Depends(get_current_active_grahaka)):
@@ -272,9 +302,6 @@ async def remove_patra_by_ID(ID: int,
             raise HTTPException(status_code=404, detail=f'Removed no image from Firebase. See: {errHTTP}.')
         except Exception as err:
             raise HTTPException(status_code=404, detail=f'Removed no image. See: {err}.')
-        else:           
-            if r: # Successsful response to DELETE is an empty string
-                print(f"DELETE operation successful with {bimba2delete}")
     
     return crud.delete_patra(db=db, patra_id=ID)
     
